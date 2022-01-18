@@ -141,6 +141,15 @@ namespace DownloadFile
             }
         }
 
+        public JObject loadSP(string typeQuery)
+        {
+            string response = queryGetResponse(typeQuery, 0, 0);
+            JObject rss = JObject.Parse(response);
+            maxProduct = (int)rss["results"][0]["nbHits"];
+            reset();
+            return rss;
+        }
+
         public JObject loadSP()
         {
             string response = queryGetResponse("", 0, 0);

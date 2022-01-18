@@ -23,6 +23,8 @@ namespace DownloadFile
         private static bool loginOK = false;
         private static bool usingCookie = true;
         private static bool stop = false;
+        private static bool searchDesigner = false;
+        private static int idDesigner = 0;
 
         public static string filePathFolderSave = "";
         public static string fileCodes = "";
@@ -109,10 +111,28 @@ namespace DownloadFile
 
         #region Dowload File
 
+        private int getIdDesigner(string name)
+        {
+            int id = 0;
+            name = name.Replace(" ", "-");
+            string Url = "https://www.creativefabrica.com/designer/"+ name;
+            HtmlAgilityPack.HtmlWeb web = new HtmlAgilityPack.HtmlWeb();
+            HtmlAgilityPack.HtmlDocument doc = web.Load(Url);
+            var tag = doc.DocumentNode.SelectSingleNode("//button[contains(@data-text-on, 'Following Designer')]");
+            id = int.Parse(tag.Attributes["data-user-id"].Value);
+            return id;
+        }
+
         private string getTypeQuery()
         {
             string temp1 = "";
             string temp2 = "";
+            string temp3 = $"\"designer.designerId:\",\"type: -Classes\"";
+            if (searchDesigner)
+            {
+                idDesigner = getIdDesigner(txtKeyword.Text);
+                temp3 = $"\"designer.designerId:{idDesigner}\",\"type: -Classes\"";
+            }
             for (int i = 0; i < checkboxType.CheckedItems.Count; i++)
             {
                 string item = (string)checkboxType.CheckedItems[i];
@@ -137,9 +157,9 @@ namespace DownloadFile
                 }
                 else
                     temp2 += "\"category:" + q + "\"";
-                //maxProduct += int.Parse(Regex.Match(item, @"\d+").Value);
+                //maxProduct += int.Parse(Regex.Match(item, @"\d+").Value;
             }
-            return Http.UrlEncode("[[" + temp1 +"],["+temp2+"]]");
+            return Http.UrlEncode("[" + temp3 + ",[" + temp1 + "],[" + temp2 + "]]").Replace("+","");
         }
 
         #endregion
@@ -286,7 +306,13 @@ namespace DownloadFile
         {
             int i = 0;
             int j = 0;
-            JObject rss = manage.loadSP();
+            JObject rss;
+            if (searchDesigner)
+            {
+                string typeQuery = getTypeQuery();
+                rss = manage.loadSP(typeQuery);
+            }else
+                rss = manage.loadSP();
             var jsonType = rss["results"][0]["facets"]["type"];
             var jsonCategory = rss["results"][0]["facets"]["category"];
 
@@ -317,7 +343,7 @@ namespace DownloadFile
             {
                 filePathFolderSave = open.SelectedPath;
                 txtFolderPath.Text = filePathFolderSave;
-                if(loginOK)
+                if (loginOK)
                     btnStart.Enabled = true;
             }
         }
@@ -363,7 +389,12 @@ namespace DownloadFile
 
         private void searchDesiger_CheckedChanged(object sender, EventArgs e)
         {
-
+            if (searchDesigner)
+            {
+                searchDesigner = false;
+                idDesigner = 0;
+            }else
+                searchDesigner = true;
         }
     }
 
